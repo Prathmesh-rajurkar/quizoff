@@ -2,31 +2,31 @@ import React from 'react';
 
 export default function QuizzOffLanding() {
   return (
-    <div className="h-screen bg-black text-white">
+    <div className="h-screen bg-black text-white box-border">
       {/* Header */}
       <header className="border-b border-gray-800 h-[10%]">
-        <div className="flex items-center justify-between px-20 py-4 ">
+        <div className="flex items-center justify-between md:px-20 px-10 py-4 ">
           <h1 className="text-purple-600 text-4xl font-semibold text-center">Quizzoff</h1>
-          <div>
-            <button className='py-2 px-4 rounded-xl text-purple-600 font-semibold'>Log In</button>
-            <button className='py-2 px-4 rounded-xl bg-purple-600 font-semibold'>Sign Up</button>
+          <div className='flex items-center justify-center gap-3'>
+            <button className='py-2 px-4 rounded-xl text-purple-600 font-semibold cursor-pointer hover:bg-gray-100/5 '>Log In</button>
+            <button className='py-2 px-4 rounded-xl bg-purple-600 font-semibold cursor-pointer hover:bg-purple-500'>Sign Up</button>
           </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="max-w-6xl mx-auto">
+      <main className="max-w-6xl mx-auto my-36">
         <div className='my-10'>
-          <h1 className='text-center text-4xl font-semibold my-2'>Host a quiz to energize your audience</h1>
-          <h3 className='text-center text-2xl font-semibold my-2'>With</h3>
+          <h1 className='text-center text-4xl font-semibold my-2'>Host a Quiz to energize your audience</h1>
+          <h3 className='text-center text-2xl font-semibold my-2'>with</h3>
           <h1 className='text-center text-6xl font-bold text-purple-600'>QuizzOff</h1>
         </div>
         <div className='flex items-center justify-center gap-10 my-10'>
-          <button className='px-5 py-3 bg-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform'>
-              Create Quiz
+          <button className='px-5 py-3 bg-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform hover:bg-purple-500'>
+            Create Quiz
           </button>
           <button className='px-5 py-3 text-purple-600 border-2 border-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-all duration-300  hover:bg-purple-600 hover:text-white'>
-              Join Quiz
+            Join Quiz
           </button>
         </div>
       </main>
