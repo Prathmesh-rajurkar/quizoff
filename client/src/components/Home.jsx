@@ -1,27 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Footer from './Footer';
+import Header from './Header';
 
 export default function QuizzOffLanding() {
   return (
     <div className="h-screen bg-black text-white box-border">
       {/* Header */}
-      <header className="border-b border-gray-800 h-[10%]">
-        <div className="flex items-center justify-between md:px-20 px-10 py-4 ">
-          <h1 className="text-purple-600 text-4xl font-semibold text-center">Quizzy</h1>
-          <div className='flex items-center justify-center gap-3'>
-            <Link to={'/login'}>
-              <button className='py-2 px-4 rounded-xl text-purple-600 font-semibold cursor-pointer hover:bg-gray-100/5 '>
-                Log In
-              </button>
-            </Link>
-            <Link to={'/register'}>
-              <button className='py-2 px-4 rounded-xl bg-purple-600 font-semibold cursor-pointer hover:bg-purple-500'>
-                Sign Up
-              </button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Header/>
 
       {/* Hero Section */}
       <main className="max-w-6xl mx-auto my-36">
@@ -34,25 +20,16 @@ export default function QuizzOffLanding() {
           <button className='px-5 py-3 bg-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform hover:bg-purple-500'>
             Create Quiz
           </button>
-          <button className='px-5 py-3 text-purple-600 border-2 border-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-all duration-300  hover:bg-purple-600 hover:text-white'>
-            Join Quiz
-          </button>
+          <Link to={'/join'}>
+            <button className='px-5 py-3 text-purple-600 border-2 border-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-all duration-300  hover:bg-purple-600 hover:text-white'>
+              Join Quiz
+            </button>
+          </Link>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800 h-[10%]">
-        <div className="container mx-auto px-6 py-6">
-          <div className="text-center text-gray-400 text-sm space-y-2">
-            <p>© 2025 QuizzOff. All rights reserved</p>
-            <div className="flex justify-center gap-6">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Contact Us</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
