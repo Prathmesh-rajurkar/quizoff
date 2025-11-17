@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom';
 import WaitingRoom from './WaitingRoom';
+import Questions from './Questions';
 
 
 const Quiz = () => {
@@ -11,7 +12,7 @@ const Quiz = () => {
     <div className="h-screen bg-black text-white box-border">
       {quizStarted ? (
         <div>
-          <button onClick={() => setQuizStarted(false)}>End Quiz</button>
+          <Questions/>
         </div>
       ) : (
         <div>

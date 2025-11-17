@@ -6,6 +6,7 @@ import LoginPage from './components/LoginPage';
 import RegisterPage from './components/RegisterPage';
 import Quiz from './components/Quiz';
 import Join from './components/Join';
+import Leaderboard from './components/Leaderboard';
 
 const router = createBrowserRouter([
   { path:'/', element: <Home /> },
@@ -13,6 +14,8 @@ const router = createBrowserRouter([
   { path: "register", element:<RegisterPage/>  },
   { path: "join", element: <Join /> },
   { path: "quiz/:id", element: <Quiz /> },
+  { path: "quiz/:id/leaderboard", element: <Leaderboard /> },
+
 ]);
 
 export default function App() {
