@@ -7,12 +7,16 @@ import RegisterPage from './components/RegisterPage';
 import Quiz from './components/Quiz';
 import Join from './components/Join';
 import Leaderboard from './components/Leaderboard';
+import Create from './components/Create';
+import Dashboard from './components/Dashboard';
 
 const router = createBrowserRouter([
   { path:'/', element: <Home /> },
   { path: "login", element:<LoginPage/>  },
   { path: "register", element:<RegisterPage/>  },
   { path: "join", element: <Join /> },
+  {path: "create", element: <Create />},
+  {path: "dashboard", element: <Dashboard />},
   { path: "quiz/:id", element: <Quiz /> },
   { path: "quiz/:id/leaderboard", element: <Leaderboard /> },
 
