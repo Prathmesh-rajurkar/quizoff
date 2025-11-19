@@ -75,7 +75,7 @@ const Leaderboard = () => {
     const rest = sortedPlayers.slice(3);
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-[#20002c] text-white">
             <main className="max-w-5xl mx-auto py-10 px-4">
                 <h1 className="text-5xl font-bold text-purple-600 text-center mb-12">
                     Leaderboard

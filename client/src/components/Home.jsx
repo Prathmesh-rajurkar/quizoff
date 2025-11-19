@@ -5,7 +5,7 @@ import Header from './Header';
 
 export default function QuizzOffLanding() {
   return (
-    <div className="h-screen bg-black text-white box-border">
+    <div className="h-screen bg-[#20002c] text-white box-border">
       {/* Header */}
       <Header />
 

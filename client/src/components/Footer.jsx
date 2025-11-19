@@ -2,7 +2,7 @@ import React from 'react'
 
 const Footer = () => {
   return (
-    <footer className="border-t border-gray-800 h-[10%]">
+    <footer className="border-t border-gray-800 h-[10%] bg-[#20002c]">
         <div className="container mx-auto px-6 py-6">
           <div className="text-center text-gray-400 text-sm space-y-2">
             <p>© 2025 QuizzOff. All rights reserved</p>

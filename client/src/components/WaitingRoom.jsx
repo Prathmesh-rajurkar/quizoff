@@ -65,7 +65,7 @@ const WaitingRoom = ({ onStartQuiz }) => {
 
 
     return (
-        <div className="min-h-screen bg-black text-white box-border flex flex-col justify-between">
+        <div className="min-h-screen bg-[#20002c] text-white box-border flex flex-col justify-between">
 
             <main className="max-w-6xl mx-auto py-10">
                 <div className="text-center">

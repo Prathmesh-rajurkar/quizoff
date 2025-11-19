@@ -96,7 +96,7 @@ const Questions = () => {
     };
 
     return (
-        <div className="h-screen bg-black text-white px-4">
+        <div className="h-screen bg-[#20002c] text-white px-4">
             <main className="max-w-6xl mx-auto py-10">
 
                 {/* Timer */}

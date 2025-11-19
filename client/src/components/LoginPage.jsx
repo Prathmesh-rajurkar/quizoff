@@ -10,7 +10,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="h-screen bg-black text-white box-border font-sans">
+    <div className="h-screen bg-[#20002c] text-white box-border font-sans">
 
       {/* Login Form */}
       <main className="max-w-6xl mx-auto flex justify-center items-center h-[80%] px-4 my-auto">

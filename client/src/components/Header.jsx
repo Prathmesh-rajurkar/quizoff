@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 const Header = () => {
     return (
-        <header className="border-b border-gray-800 h-[10%]">
+        <header className="border-b border-gray-800 h-[10%] bg-[#20002c]">
             <div className="flex items-center justify-between md:px-20 px-10 py-4 ">
                 <h1 className="text-purple-600 text-4xl font-semibold text-center">
                     Quizzy

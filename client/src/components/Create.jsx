@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import Header from "./Header";
-import { FaCheckCircle, FaEdit } from "react-icons/fa";
+import { FaCheck, FaTrash, FaEdit, FaPlus } from "react-icons/fa";
+import { toast } from "react-toastify";
 
 const Create = () => {
     const [questions, setQuestions] = useState([]);
@@ -13,7 +14,7 @@ const Create = () => {
                 text: "",
                 options: ["", "", "", ""],
                 correctIndex: null,
-                saved: false, // <-- NEW: saved state per question
+                saved: false,
             },
         ]);
     };
@@ -47,13 +48,15 @@ const Create = () => {
         );
     };
 
-    const removeOption = (qid) => {
+    const removeOption = (qid, index) => {
         setQuestions(q =>
-            q.map(item =>
-                item.id === qid && item.options.length > 2
-                    ? { ...item, options: item.options.slice(0, -1) }
-                    : item
-            )
+            q.map(item => {
+                if (item.id === qid) {
+                    const newOpts = item.options.filter((_, i) => i !== index);
+                    return { ...item, options: newOpts };
+                }
+                return item;
+            })
         );
     };
 
@@ -69,192 +72,221 @@ const Create = () => {
         setQuestions(questions.filter(q => q.id !== qid));
     };
 
-    // SAVE ONLY THIS PROBLEM
     const saveProblem = (qid) => {
         setQuestions(q =>
             q.map(item =>
-                item.id === qid
-                    ? { ...item, saved: true }
-                    : item
+                item.id === qid ? { ...item, saved: true } : item
             )
         );
     };
 
-    // EDIT ONLY THIS PROBLEM
     const editProblem = (qid) => {
         setQuestions(q =>
             q.map(item =>
-                item.id === qid
-                    ? { ...item, saved: false }
-                    : item
+                item.id === qid ? { ...item, saved: false } : item
             )
         );
     };
 
     return (
-        <div className="min-h-screen bg-black text-white">
+        <div className="min-h-screen bg-[#20002c] text-white">
             <Header />
 
-            <main className="px-10 max-w-6xl mx-auto mt-20">
-                <h1 className="text-4xl font-bold text-purple-600 mb-10">
-                    Create Quiz
-                </h1>
+            <main className="px-10 max-w-7xl mx-auto mt-20 pb-10">
 
-                {/* Add Question */}
+                {/* Top Add Button */}
+
                 <button
                     onClick={addQuestion}
-                    className="bg-purple-700 hover:bg-purple-800 px-6 py-3 rounded-lg font-semibold mb-10 transition"
+                    className="px-3 py-2 bg-gray-950 hover:bg-purple-600 border-2 border-purple-600 text-purple-600 cursor-pointer rounded text-lg fixed right-6 hover:text-white transition-all duration-300  active:scale-95 hover:scale-105"
                 >
-                    + Add Question
+                    Add
                 </button>
 
-                {/* Render Each Question */}
-                <div className="space-y-10">
+
+                {questions.length === 0 && (
+                    <div className="bg-purple-900/30 border border-purple-700 py-10 text-center rounded-xl text-xl">
+                        No Questions. Click on <span className="font-bold">Add</span> to begin.
+                    </div>
+                )}
+
+                {/* Render Questions */}
+                <div className="space-y-14">
                     {questions.map((q, i) => (
                         <div
                             key={q.id}
-                            className="border border-purple-700 rounded-xl p-6 bg-gray-900"
+                            className="bg-[#2D0041] border border-purple-700 p-8 rounded-xl"
                         >
 
-                            {/* EDIT MODE */}
+                            {/* ============== EDIT MODE ============== */}
                             {!q.saved && (
                                 <>
-                                    <div className="flex justify-between items-center mb-5">
-                                        <h2 className="text-xl font-semibold text-purple-400">
+                                    {/* HEADER */}
+                                    <div className="flex justify-between mb-4">
+                                        <h2 className="text-2xl font-semibold text-purple-300">
                                             Problem {i + 1}
                                         </h2>
                                         <button
-                                            className="text-red-500 hover:text-red-600"
                                             onClick={() => removeQuestion(q.id)}
+                                            className="text-red-400 hover:text-red-500"
                                         >
-                                            Remove
+                                            <FaTrash size={22} />
                                         </button>
                                     </div>
 
-                                    <input
-                                        type="text"
+                                    {/* QUESTION BOX */}
+                                    <textarea
                                         value={q.text}
                                         onChange={(e) =>
                                             updateQuestionText(q.id, e.target.value)
                                         }
-                                        placeholder="Enter your question..."
-                                        className="w-full px-4 py-3 rounded-md bg-gray-800 border border-purple-700 mb-6"
+                                        placeholder="Type question here"
+                                        className="w-full p-6 h-32 text-lg rounded-xl bg-[#16001f] border border-purple-700 outline-none"
                                     />
 
-                                    <div className="space-y-4">
-                                        {q.options.map((opt, index) => (
-                                            <div key={index} className="flex gap-4 items-center">
-                                                <input
-                                                    type="radio"
-                                                    name={`correct-${q.id}`}
-                                                    checked={q.correctIndex === index}
-                                                    onChange={() => setCorrect(q.id, index)}
-                                                    className="w-5 h-5"
-                                                />
+                                    {/* OPTIONS GRID */}
+                                    <div className="lg:flex items-center justify-center w-full gap-2">
 
-                                                <input
-                                                    type="text"
-                                                    value={opt}
-                                                    onChange={(e) =>
-                                                        updateOption(q.id, index, e.target.value)
-                                                    }
-                                                    placeholder={`Option ${index + 1}`}
-                                                    className="flex-1 px-4 py-3 rounded-md bg-gray-800 border border-purple-700"
-                                                />
-                                            </div>
-                                        ))}
+
+                                        <div className="flex flex-col lg:flex-row w-full justify-center items-center gap-6 mt-6">
+                                            {q.options.map((opt, index) => {
+                                                const colors = [
+                                                    "bg-blue-600",
+                                                    "bg-teal-600",
+                                                    "bg-yellow-500",
+                                                    "bg-pink-600",
+                                                    "bg-purple-600"
+                                                ];
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className={`p-5 rounded-xl w-full text-lg relative ${colors[index % 5]}`}
+                                                    >
+                                                        {/* Remove option */}
+                                                        {q.options.length > 2 && (
+                                                            <button
+                                                                onClick={() => removeOption(q.id, index)}
+                                                                className="absolute top-3 left-3 bg-white/20 hover:bg-white/30 p-1 rounded"
+                                                            >
+                                                                <FaTrash size={14} />
+                                                            </button>
+                                                        )}
+
+
+                                                        {/* Correct Marker */}
+                                                        <button
+                                                            onClick={() => setCorrect(q.id, index)}
+                                                            className={`absolute top-3 right-3 p-1 rounded-full border-2 
+                                                            ${q.correctIndex === index
+                                                                    ? "border-white bg-white/40"
+                                                                    : "border-white/40"
+                                                                }`}
+                                                        >
+                                                            {q.correctIndex === index && (
+                                                                <FaCheck size={14} />
+                                                            )}
+                                                        </button>
+
+                                                        <input
+                                                            value={opt}
+                                                            onChange={(e) =>
+                                                                updateOption(q.id, index, e.target.value)
+                                                            }
+                                                            placeholder="Type answer option here"
+                                                            className="w-full h-32 mt-6 text-xl bg-transparent outline-none text-white"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* ADD OPTION */}
+                                        <div className="mt-6 flex justify-end">
+                                            <button
+                                                onClick={() => addOption(q.id)}
+                                                disabled={q.options.length >= 5}
+                                                className="p-3 bg-purple-700 hover:bg-purple-800 rounded-lg disabled:bg-gray-600"
+                                            >
+                                                <FaPlus />
+                                            </button>
+                                        </div>
                                     </div>
-
-                                    {/* Add/Remove Option */}
-                                    <div className="flex gap-4 mt-6">
-                                        <button
-                                            disabled={q.options.length >= 5}
-                                            onClick={() => addOption(q.id)}
-                                            className={`px-4 py-2 rounded-lg ${
-                                                q.options.length >= 5
-                                                    ? "bg-gray-600 cursor-not-allowed"
-                                                    : "bg-purple-700 hover:bg-purple-800"
-                                            }`}
-                                        >
-                                            + Add Option
-                                        </button>
-
-                                        <button
-                                            disabled={q.options.length <= 2}
-                                            onClick={() => removeOption(q.id)}
-                                            className={`px-4 py-2 rounded-lg ${
-                                                q.options.length <= 2
-                                                    ? "bg-gray-600 cursor-not-allowed"
-                                                    : "bg-red-600 hover:bg-red-700"
-                                            }`}
-                                        >
-                                            - Remove Option
-                                        </button>
-                                    </div>
-
                                     {/* SAVE BUTTON */}
                                     <button
                                         onClick={() => {
-                                            if (q.text.trim() === "") return;
+                                            if (q.text.trim() === "") {
+                                                toast.error("Question can't be empty")
+                                                return;
+                                            };
+                                            if (q.options.some(opt => opt.trim() === "")) {
+                                                toast.error("All options must be filled");
+                                                return;
+                                            }
+                                            if (q.correctIndex === null) {
+                                                toast.error("Select Correct Answer")
+                                                return;
+                                            }
+
                                             saveProblem(q.id);
                                         }}
-                                        disabled={q.text.trim() === ""}
-                                        className={`mt-6 px-6 py-3 rounded-lg font-semibold transition ${
-                                            q.text.trim() === ""
-                                                ? "bg-gray-600 cursor-not-allowed"
-                                                : "bg-green-600 hover:bg-green-700"
-                                        }`}
+                                        className="mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg"
                                     >
-                                        Save Problem
+                                        Save
                                     </button>
                                 </>
                             )}
 
-                            {/* PREVIEW MODE */}
+                            {/* ============== PREVIEW MODE ============== */}
                             {q.saved && (
-                                <div>
-                                    <div className="flex justify-between items-center mb-5">
-                                        <h2 className="text-xl font-semibold text-purple-400">
+                                <>
+                                    <div className="flex justify-between mb-6">
+                                        <h2 className="text-2xl font-semibold text-purple-300">
                                             Problem {i + 1}
                                         </h2>
 
                                         <button
                                             onClick={() => editProblem(q.id)}
-                                            className="text-purple-400 hover:text-purple-500 text-xl flex items-center gap-2"
+                                            className="text-purple-300 hover:text-purple-400 flex items-center gap-2"
                                         >
                                             <FaEdit />
                                             Edit
                                         </button>
                                     </div>
 
-                                    <h3 className="text-2xl font-semibold mb-4">
-                                        {q.text}
-                                    </h3>
-
-                                    <div className="space-y-3">
-                                        {q.options.map((opt, index) => {
-                                            const isCorrect = index === q.correctIndex;
-                                            return (
-                                                <div
-                                                    key={index}
-                                                    className={`px-4 py-3 rounded-lg border flex items-center gap-3 ${
-                                                        isCorrect
-                                                            ? "border-green-500 bg-green-900/30"
-                                                            : "border-gray-700"
+                                    <div className="text-xl mb-6">{q.text}</div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        {q.options.map((opt, index) => (
+                                            <div
+                                                key={index}
+                                                className={`p-4 border rounded-xl mb-3 flex justify-between items-center
+                                                ${index === q.correctIndex
+                                                        ? "border-green-500 bg-green-900/30"
+                                                        : "border-gray-600"
                                                     }`}
-                                                >
-                                                    <span>{opt}</span>
-                                                    {isCorrect && (
-                                                        <FaCheckCircle className="text-green-500 text-xl" />
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
+                                            >
+                                                {opt}
+
+                                                {index === q.correctIndex && (
+                                                    <FaCheck className="text-green-500" />
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
-                                </div>
+
+                                </>
                             )}
+                            
                         </div>
                     ))}
+
+                    {questions.length !== 0 && (
+                    <div className="flex items-center justify-center mt-10">
+                        <button className="bg-gray-950 border-2 border-green-600 rounded px-3 py-2 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition-all duration-300 cursor-pointer active:scale-95 hover:scale-105">
+                            Save Quizz
+                        </button>
+                    </div>
+                )}
                 </div>
             </main>
         </div>
