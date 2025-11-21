@@ -1,56 +1,61 @@
-import React from 'react'
-import { Camera, ChartPie, Home, LibraryBig } from 'lucide-react';
+import React, { useState } from "react";
+import Sidebar from "./Sidebar";
+import { Menu } from "lucide-react";
+const pastQuizs = [{
+  id: 1,
+  title: "Sample Quiz 1",
+  date: "2024-06-01",
+  participants: 25,
 
-const sidebarNav = [{
-  name: "Home",
-  link: "dashboard/",
-  icon: Home
 }, {
-  name: "Library",
-  link: "dashboard/library",
-  icon: LibraryBig
-}, {
-  name: "Sessions",
-  link: "dashboard/sessions",
-  icon: ChartPie
-}
-]
+  id: 2,
+  title: "Sample Quiz 2",
+  date: "2024-06-05",
+  participants: 30,
+}]
 const Dashboard = () => {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div className="h-screen bg-[#20002c] text-white box-border">
-      <div className='flex '>
-        <div className='h-screen border '>
-          <div className='border-b p-4'>
-            <h1 className='text-3xl'>Quizzy</h1>
-          </div>
-          <div className='flex flex-col items-center justify-between mt-10'>
-            {sidebarNav.map((nav) => {
-              const Icon = nav.icon;
-              return (
-                <a href={nav.link} className='flex flex-col items-center justify-between mb-5'>
-                  <Icon />
-                  {nav.name}
-                </a>
-              )
-            }
-            )}
-          </div>
+    <div className="flex relative bg-[#20002c] text-white min-h-screen">
 
+      {/* Mobile Hamburger Button */}
+      <button
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-white/10 backdrop-blur-md"
+        onClick={() => setOpen(true)}
+      >
+        <Menu size={26} />
+      </button>
 
-          <div>
-            <div>
-              
+      {/* Sidebar */}
+      <Sidebar open={open} setOpen={setOpen} />
+
+      {/* Main content */}
+      <div className="flex-1 p-6">
+        <h1 className="text-2xl text-center">
+          Dashboard
+        </h1>
+        <div className="mt-5">
+          <h3 className="text-xl underline-offset-4 underline decoration-dashed">
+            Past Quizzes
+          </h3>
+
+          <div className="my-10">
+            <div className="flex items-center justify-end px-3">
+              <button className="px-3 py-2 bg-green-600 mb-3 rounded font-bold cursor-pointer hover:scale-105 active:scale-95 transition-all duration-200">Create Quiz</button>
             </div>
-            <div className='flex items-center justify-around'>
-              <div className='rounded-full bg-red-600 text-white w-10 h-10 text-center text-2xl'>P</div>
-              <h3>Prathmesh</h3>
-            </div>
+            {pastQuizs.map((quiz) => (
+              <div key={quiz.id} className="flex items-center bg-white text-purple-600 justify-between px-3 py-2 border border-gray-200/50 m-3 rounded-lg">
+                <p>Date: {quiz.date}</p>
+                <h2 className="text-lg font-semibold">{quiz.title}</h2>
+                <p>Participants: {quiz.participants}</p>
+              </div>
+            ))}
           </div>
         </div>
-        <div></div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;

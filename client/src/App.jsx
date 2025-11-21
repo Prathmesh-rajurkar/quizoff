@@ -12,6 +12,9 @@ import Dashboard from './components/Dashboard';
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Library from './components/Library';
+import Sessions from './components/Sessions';
+import Pricing from './components/Pricing';
 
 const router = createBrowserRouter([
   { path:'/', element: <Home /> },
@@ -20,6 +23,9 @@ const router = createBrowserRouter([
   { path: "join", element: <Join /> },
   { path: "create", element: <Create />},
   { path: "dashboard", element: <Dashboard />},
+  { path: "dashboard/library", element: <Library/>},
+  { path: "dashboard/sessions", element: <Sessions/>},
+  { path: "pricing", element: <Pricing/>},
   { path: "quiz/:id", element: <Quiz /> },
   { path: "quiz/:id/leaderboard", element: <Leaderboard /> },
 ]);
