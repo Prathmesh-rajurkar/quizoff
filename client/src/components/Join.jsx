@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
+import { quizAPI } from "../utils/api";
+import { toast } from "react-toastify";
 
 const Join = () => {
     const [code, setCode] = useState("");
-    const [error,setError] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const handleJoinQuiz = () => {
+    
+    const handleJoinQuiz = async () => {
         setError("");
         if (code.trim() === "") {
             setError("Code cannot be empty");
@@ -18,7 +22,18 @@ const Join = () => {
             return;
         }
 
-        navigate(`/quiz/${code}`);
+        setLoading(true);
+        try {
+            const response = await quizAPI.getByCode(code);
+            if (response.success) {
+                navigate(`/quiz/${code}`);
+            }
+        } catch (error) {
+            setError(error.message || "Quiz not found");
+            toast.error(error.message || "Quiz not found");
+        } finally {
+            setLoading(false);
+        }
     };
     return (
         <div className="h-screen bg-[#20002c] text-white box-border">
@@ -42,10 +57,11 @@ const Join = () => {
                             }}
                         />
                         <button
-                            className=" py-3 px-4 text-2xl bg-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform hover:bg-purple-700 "
+                            className=" py-3 px-4 text-2xl bg-purple-600 rounded-xl font-semibold cursor-pointer active:scale-95 transition-transform hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={handleJoinQuiz}
+                            disabled={loading}
                         >
-                            Join
+                            {loading ? "Joining..." : "Join"}
                         </button>
                     </div>
                     {error && <p className="text-red-500 text-center">{error}</p>}

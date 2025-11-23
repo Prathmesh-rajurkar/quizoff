@@ -1,51 +1,83 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { createWebSocket } from "../utils/api";
 
-const Questions = () => {
-    const questions = [
-        {
-            id: 1,
-            text: "What is the capital of France?",
-            options: [
-                { id: 'A', text: "Berlin" },
-                { id: 'B', text: "Madrid" },
-                { id: 'C', text: "Paris" },
-                { id: 'D', text: "Rome" }
-            ],
-            correctOptionId: 'C',
-            time: 10
-        },
-        {
-            id: 2,
-            text: "Which planet is known as the Red Planet?",
-            options: [
-                { id: 'A', text: "Earth" },
-                { id: 'B', text: "Mars" },
-                { id: 'C', text: "Jupiter" },
-                { id: 'D', text: "Saturn" }
-            ],
-            correctOptionId: 'B',
-            time: 15
-        }
-    ];
+const Questions = ({ code }) => {
     const navigate = useNavigate();
-    const {id} = useParams();
+    const { user } = useAuth();
+    const [questions, setQuestions] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState(null);
-    const [timeLeft, setTimeLeft] = useState(questions[0].time);
+    const [timeLeft, setTimeLeft] = useState(30);
+    const [totalQuestions, setTotalQuestions] = useState(0);
+    const [score, setScore] = useState(0);
+    const wsRef = useRef(null);
+    const questionStartTimeRef = useRef(Date.now());
+
+    // Connect to WebSocket and receive questions
+    useEffect(() => {
+        const username = user?.username || 'Anonymous';
+        const userId = user?.id || null;
+        const ws = createWebSocket(code, userId, username);
+        wsRef.current = ws;
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            switch (data.type) {
+                case 'QUIZ_STARTED':
+                    const question = data.payload.question;
+                    setQuestions([question]);
+                    setCurrentIndex(0);
+                    setTimeLeft(question.time || 30);
+                    setTotalQuestions(data.payload.totalQuestions);
+                    questionStartTimeRef.current = Date.now();
+                    break;
+                case 'NEXT_QUESTION':
+                    const nextQuestion = data.payload.question;
+                    setQuestions(prev => [...prev, nextQuestion]);
+                    setCurrentIndex(data.payload.question.questionIndex);
+                    setTimeLeft(nextQuestion.time || 30);
+                    setSelectedOption(null);
+                    questionStartTimeRef.current = Date.now();
+                    break;
+                case 'ANSWER_SUBMITTED':
+                    if (data.payload.isCorrect) {
+                        setScore(data.payload.score);
+                    }
+                    break;
+                case 'QUIZ_FINISHED':
+                    navigate(`/quiz/${code}/leaderboard`);
+                    break;
+                case 'ERROR':
+                    console.error('WebSocket error:', data.payload.message);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        return () => {
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
+        };
+    }, [code, user, navigate]);
 
     const currentQuestion = questions[currentIndex];
 
     // --- TIMER ---
     useEffect(() => {
-        if (selectedOption) return; // stop timer after answer
+        if (!currentQuestion || selectedOption) return; // stop timer after answer
 
         if (timeLeft <= 0) {
             setSelectedOption("TIME_UP");
-
-            setTimeout(() => {
-                goToNextQuestion();
-            }, 1000);
+            handleAnswer(null); // Submit with no answer
             return;
         }
 
@@ -54,46 +86,60 @@ const Questions = () => {
         }, 1000);
 
         return () => clearTimeout(timer);
-    }, [timeLeft, selectedOption]);
+    }, [timeLeft, selectedOption, currentQuestion]);
 
 
     // --- ON ANSWER CLICK ---
-    const handleAnswer = (optionId) => {
-        if (selectedOption) return;
+    const handleAnswer = (optionIndex) => {
+        if (selectedOption !== null || !currentQuestion) return;
 
-        setSelectedOption(optionId);
+        const timeTaken = Math.floor((Date.now() - questionStartTimeRef.current) / 1000);
+        setSelectedOption(optionIndex);
 
-        setTimeout(() => {
-            goToNextQuestion();
-        }, 1000);
-    };
-
-    // --- Move to next question ---
-    const goToNextQuestion = () => {
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-            setSelectedOption(null);
-            setTimeLeft(questions[currentIndex + 1].time);
-        } else {
-            navigate(`/quiz/${id}/leaderboard`);
+        // Send answer to server
+        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+                type: 'SUBMIT_ANSWER',
+                payload: {
+                    code,
+                    questionIndex: currentIndex,
+                    selectedIndex: optionIndex,
+                    timeTaken
+                }
+            }));
         }
+
+        // Wait a bit before moving to next question
+        setTimeout(() => {
+            // Server will send NEXT_QUESTION or QUIZ_FINISHED
+            // But we can also request it if needed
+            if (currentIndex < totalQuestions - 1) {
+                if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(JSON.stringify({
+                        type: 'NEXT_QUESTION',
+                        payload: { code }
+                    }));
+                }
+            }
+        }, 2000);
     };
 
     // --- Get border color ---
-    const getBorderColor = (optId) => {
-        if (!selectedOption) return "border-purple-600";
-
-        // highlight correct in green for:
-        // - correct click
-        // - timeout
-        if (optId === currentQuestion.correctOptionId) return "border-green-600";
-
-        // user clicked wrong → mark selected red
-        if (optId === selectedOption && optId !== currentQuestion.correctOptionId)
-            return "border-red-600";
-
+    const getBorderColor = (optIndex) => {
+        if (selectedOption === null) return "border-purple-600";
+        // Note: We don't know the correct answer until server responds
+        // For now, just highlight selected
+        if (optIndex === selectedOption) return "border-yellow-600";
         return "border-purple-600";
     };
+
+    if (!currentQuestion) {
+        return (
+            <div className="h-screen bg-[#20002c] text-white flex items-center justify-center">
+                <p className="text-2xl">Waiting for quiz to start...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="h-screen bg-[#20002c] text-white px-4">
@@ -132,17 +178,27 @@ const Questions = () => {
                     <h1>{currentQuestion.text}</h1>
                 </div>
 
+                <div className="mb-4 text-center">
+                    <p className="text-xl">Question {currentIndex + 1} of {totalQuestions}</p>
+                    <p className="text-lg text-purple-400">Score: {score}</p>
+                </div>
+
                 <div className="grid grid-cols-2 gap-2 h-96">
-                    {currentQuestion.options.map((opt) => (
-                        <button
-                            key={opt.id}
-                            onClick={() => handleAnswer(opt.id)}
-                            className={`rounded border-4 p-4 text-left 
-                                transition-all duration-300 ${getBorderColor(opt.id)}`}
-                        >
-                            {opt.id}. {opt.text}
-                        </button>
-                    ))}
+                    {currentQuestion.options.map((opt, index) => {
+                        const optionText = typeof opt === 'object' ? opt.text : opt;
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => handleAnswer(index)}
+                                disabled={selectedOption !== null}
+                                className={`rounded border-4 p-4 text-left 
+                                    transition-all duration-300 ${getBorderColor(index)}
+                                    disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                                {String.fromCharCode(65 + index)}. {optionText}
+                            </button>
+                        );
+                    })}
                 </div>
 
             </main>

@@ -1,46 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FaUser, FaUserCircle, FaUserAstronaut, FaUserNinja, FaUserSecret, FaUserTie } from 'react-icons/fa';
 import { useParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { createWebSocket } from '../utils/api';
+import { quizAPI } from '../utils/api';
 
 const WaitingRoom = ({ onStartQuiz }) => {
-    const [isAdmin, setIsAdmin] = useState(true);
+    const { id: code } = useParams();
+    const { user, isAuthenticated } = useAuth();
+    const [isAdmin, setIsAdmin] = useState(false);
     const [scheduleTime, setScheduleTime] = useState(15);
     const [countdown, setCountdown] = useState(null);
-    const [playerInfo] = useState([
-        { id: 1, name: 'Aarav Sharma', image: 'FaUser' },
-        { id: 2, name: 'Priya Patel', image: 'FaUserCircle' },
-        { id: 3, name: 'Rohan Singh', image: 'FaUserAstronaut' },
-        { id: 4, name: 'Neha Gupta', image: 'FaUserNinja' },
-        { id: 5, name: 'Vikram Desai', image: 'FaUserSecret' },
-        { id: 6, name: 'Anjali Mehta', image: 'FaUserTie' },
-        { id: 7, name: 'Karan Malhotra', image: 'FaUser' },
-        { id: 8, name: 'Sneha Kapoor', image: 'FaUserCircle' },
-        { id: 9, name: 'Arjun Reddy', image: 'FaUserAstronaut' },
-        { id: 10, name: 'Divya Iyer', image: 'FaUserNinja' },
-        { id: 11, name: 'Siddharth Rao', image: 'FaUserSecret' },
-        { id: 12, name: 'Ishita Banerjee', image: 'FaUserTie' },
-        { id: 13, name: 'Rahul Verma', image: 'FaUser' },
-        { id: 14, name: 'Pooja Nair', image: 'FaUserCircle' },
-        { id: 15, name: 'Aditya Joshi', image: 'FaUserAstronaut' },
-        { id: 16, name: 'Shreya Menon', image: 'FaUserNinja' },
-        { id: 17, name: 'Kunal Shah', image: 'FaUserSecret' },
-        { id: 18, name: 'Tanya Agarwal', image: 'FaUserTie' },
-        { id: 19, name: 'Nikhil Kumar', image: 'FaUser' },
-        { id: 20, name: 'Riya Chatterjee', image: 'FaUserCircle' },
-        { id: 21, name: 'Amitabh Roy', image: 'FaUserAstronaut' },
-        { id: 22, name: 'Meera Thakur', image: 'FaUserNinja' },
-        { id: 23, name: 'Suresh Pillai', image: 'FaUserSecret' },
-        { id: 24, name: 'Lakshmi Das', image: 'FaUserTie' },
-        { id: 25, name: 'Harish Yadav', image: 'FaUser' },
-        { id: 26, name: 'Anita Bose', image: 'FaUserCircle' },
-        { id: 27, name: 'Vivek Pandey', image: 'FaUserAstronaut' },
-    ]);
-    const [playersJoined, setPlayersJoined] = useState(playerInfo.length || 0);
+    const [participants, setParticipants] = useState([]);
+    const [participantsCount, setParticipantsCount] = useState(0);
+    const wsRef = useRef(null);
+
+    const [playersJoined, setPlayersJoined] = useState(0);
+
+    useEffect(() => {
+        // Check if user is admin (creator of the quiz)
+        const checkAdmin = async () => {
+            try {
+                const response = await quizAPI.getByCode(code);
+                if (response.success && response.quiz.creator) {
+                    // Check if current user is the creator
+                    const userId = user?.id || localStorage.getItem('userId');
+                    if (response.quiz.creator._id === userId || response.quiz.creator === userId) {
+                        setIsAdmin(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking admin:', error);
+            }
+        };
+
+        if (isAuthenticated && user) {
+            checkAdmin();
+        }
+
+        // Connect to WebSocket
+        const username = user?.username || 'Anonymous';
+        const userId = user?.id || null;
+        const ws = createWebSocket(code, userId, username);
+        wsRef.current = ws;
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            switch (data.type) {
+                case 'JOINED_QUIZ':
+                    setParticipants(data.payload.participants || []);
+                    setPlayersJoined(data.payload.participants?.length || 0);
+                    break;
+                case 'PARTICIPANT_JOINED':
+                    setParticipantsCount(data.payload.participantsCount || 0);
+                    setPlayersJoined(data.payload.participantsCount || 0);
+                    break;
+                case 'QUIZ_STARTED':
+                    onStartQuiz(true);
+                    break;
+                case 'ERROR':
+                    console.error('WebSocket error:', data.payload.message);
+                    break;
+                default:
+                    break;
+            }
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        return () => {
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
+        };
+    }, [code, user, isAuthenticated, onStartQuiz]);
+
     function handleStart(time) {
+        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+            console.error('WebSocket not connected');
+            return;
+        }
 
         // If time is 0 → Start Now
         if (time === 0) {
-            onStartQuiz(true);
+            wsRef.current.send(JSON.stringify({
+                type: 'START_QUIZ',
+                payload: { code }
+            }));
             return;
         }
 
@@ -59,7 +108,10 @@ const WaitingRoom = ({ onStartQuiz }) => {
 
         // Timeout to trigger quiz start AT the end
         setTimeout(() => {
-            onStartQuiz(true);
+            wsRef.current.send(JSON.stringify({
+                type: 'START_QUIZ',
+                payload: { code }
+            }));
         }, time * 1000);
     }
 
@@ -71,6 +123,9 @@ const WaitingRoom = ({ onStartQuiz }) => {
                 <div className="text-center">
                     <h1 className="text-6xl font-semibold my-10 text-purple-600">Waiting Room</h1>
 
+                    {/* Quiz Code */}
+                    <p className="text-2xl mb-2 text-purple-400">Quiz Code: {code}</p>
+                    
                     {/* Players Joined */}
                     <p className="text-2xl mb-4">Players Joined: {playersJoined}</p>
 
@@ -121,15 +176,19 @@ const WaitingRoom = ({ onStartQuiz }) => {
                 </div>
 
                 <div className="mt-10 flex flex-wrap items-center justify-around gap-x-5 gap-y-2 max-w-8xl mx-auto">
-                    {playerInfo.map((player) => (
-                        <div
-                            key={player.id}
-                            className="flex items-center justify-between gap-1 m-2 border py-1 px-2 rounded-2xl"
-                        >
-                            {getIconComponent(player.image)}
-                            <p className="text-lg">{player.name}</p>
-                        </div>
-                    ))}
+                    {participants.length > 0 ? (
+                        participants.map((participant, index) => (
+                            <div
+                                key={index}
+                                className="flex items-center justify-between gap-1 m-2 border py-1 px-2 rounded-2xl"
+                            >
+                                {getIconComponent(playerInfo[index % playerInfo.length]?.image || 'FaUser')}
+                                <p className="text-lg">{participant.username || 'Anonymous'}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-400">No participants yet...</p>
+                    )}
                 </div>
 
             </main>
@@ -151,4 +210,5 @@ const getIconComponent = (iconName) => {
     const randomIcon = Object.keys(iconMap)[Math.floor(Math.random() * Object.keys(iconMap).length)];
     return iconMap[iconName] || iconMap[randomIcon];
 };
+
 export default WaitingRoom;

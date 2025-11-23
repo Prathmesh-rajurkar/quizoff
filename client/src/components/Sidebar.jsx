@@ -1,8 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Home, LibraryBig, ChartPie, LogOut, Settings, X, Crown } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const sidebarNav = [
-    { name: "Home", link: "/dashboard/", icon: Home },
+    { name: "Home", link: "/dashboard", icon: Home },
     { name: "Library", link: "/dashboard/library", icon: LibraryBig },
     { name: "Sessions", link: "/dashboard/sessions", icon: ChartPie },
     { name: "Pricing", link: "/pricing", icon: Crown },
@@ -10,6 +12,19 @@ const sidebarNav = [
 ];
 
 const Sidebar = ({ open, setOpen }) => {
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
+
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
+
+    const handleNavClick = (link) => {
+        navigate(link);
+        setOpen(false);
+    };
+
     return (
         <>
             {/* BACKDROP for mobile */}
@@ -50,15 +65,15 @@ const Sidebar = ({ open, setOpen }) => {
                         {sidebarNav.map((item) => {
                             const Icon = item.icon;
                             return (
-                                <a
+                                <button
                                     key={item.name}
-                                    href={item.link}
+                                    onClick={() => handleNavClick(item.link)}
                                     className="flex items-center gap-3 px-4 py-3 rounded-xl 
-                           hover:bg-white/10 transition-all group"
+                           hover:bg-white/10 transition-all group w-full"
                                 >
                                     <Icon className="text-purple-300 group-hover:scale-110 transition" />
                                     <span className="text-sm font-medium">{item.name}</span>
-                                </a>
+                                </button>
                             );
                         })}
                     </nav>
@@ -67,22 +82,25 @@ const Sidebar = ({ open, setOpen }) => {
 
                 {/* Bottom Profile */}
                 <div>
-                    <ProgressBar current={2} total={10} />
                     <div className="border-t border-white/10 pt-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="rounded-full bg-gradient-to-br from-pink-600 to-purple-600 
                             w-11 h-11 flex items-center justify-center text-lg font-bold shadow-lg">
-                                P
+                                {(user?.username || user?.email || 'U').charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <p className="text-sm font-semibold">Prathmesh</p>
+                                <p className="text-sm font-semibold">{user?.username || user?.email || 'User'}</p>
                                 <p className="text-xs text-gray-300">View Profile</p>
                             </div>
                         </div>
 
                         <div className="flex flex-col items-center gap-3 text-gray-300">
                             <Settings className="hover:text-white cursor-pointer" size={20} />
-                            <LogOut className="hover:text-white cursor-pointer" size={20} />
+                            <LogOut 
+                                onClick={handleLogout}
+                                className="hover:text-white cursor-pointer" 
+                                size={20} 
+                            />
                         </div>
                     </div>
                 </div>

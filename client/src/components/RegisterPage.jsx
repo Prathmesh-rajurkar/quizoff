@@ -1,15 +1,43 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import eye icons
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false); // State for confirm password visibility
+  const { register } = useAuth();
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent form refresh
-    navigate("/"); // Redirect to home page
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setLoading(true);
+    const result = await register(email, password, username);
+    setLoading(false);
+
+    if (result.success) {
+      toast.success("Registration successful!");
+      navigate("/dashboard");
+    } else {
+      toast.error(result.error || "Registration failed");
+    }
   };
 
   return (
@@ -22,15 +50,26 @@ const RegisterPage = () => {
           </h2>
           <form className="flex flex-col space-y-4" onSubmit={handleSubmit}>
             <input
-              type="text"
+              type="email"
               placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="p-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all"
               required
+            />
+            <input
+              type="text"
+              placeholder="Username (optional)"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="p-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all"
             />
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all"
                 required
               />
@@ -46,6 +85,8 @@ const RegisterPage = () => {
               <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full p-3 bg-black border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all"
                 required
               />
@@ -59,9 +100,10 @@ const RegisterPage = () => {
             </div>
             <button
               type="submit"
-              className="bg-purple-600 hover:bg-purple-500 text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95"
+              disabled={loading}
+              className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-xl transition-all active:scale-95"
             >
-              Register
+              {loading ? "Registering..." : "Register"}
             </button>
             <p className="text-center text-gray-400 text-sm">
               Already have an account?{" "}

@@ -1,10 +1,25 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Header from "./Header";
 import { FaCheck, FaTrash, FaEdit, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { quizAPI } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
 
 const Create = () => {
+    const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const [questions, setQuestions] = useState([]);
+    const [title, setTitle] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    // Redirect if not authenticated
+    React.useEffect(() => {
+        if (!isAuthenticated) {
+            toast.error("Please login to create a quiz");
+            navigate("/login");
+        }
+    }, [isAuthenticated, navigate]);
 
     const addQuestion = () => {
         setQuestions([
@@ -86,6 +101,40 @@ const Create = () => {
                 item.id === qid ? { ...item, saved: false } : item
             )
         );
+    };
+
+    const handleSaveQuiz = async () => {
+        if (!title.trim()) {
+            toast.error("Please enter a quiz title");
+            return;
+        }
+
+        if (questions.some(q => !q.saved)) {
+            toast.error("Please save all questions before saving the quiz");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            // Transform questions to match backend format
+            const formattedQuestions = questions.map(q => ({
+                text: q.text,
+                options: q.options.map(opt => ({ text: opt })),
+                correctIndex: q.correctIndex,
+                time: 30 // Default time, can be made configurable
+            }));
+
+            const response = await quizAPI.create(title, formattedQuestions);
+            
+            if (response.success) {
+                toast.success("Quiz created successfully!");
+                navigate(`/dashboard/library`);
+            }
+        } catch (error) {
+            toast.error(error.message || "Failed to create quiz");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -281,9 +330,20 @@ const Create = () => {
                     ))}
 
                     {questions.length !== 0 && (
-                    <div className="flex items-center justify-center mt-10">
-                        <button className="bg-gray-950 border-2 border-green-600 rounded px-3 py-2 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition-all duration-300 cursor-pointer active:scale-95 hover:scale-105">
-                            Save Quizz
+                    <div className="flex flex-col items-center justify-center mt-10 gap-4">
+                        <input
+                            type="text"
+                            placeholder="Enter Quiz Title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="w-full max-w-md p-3 bg-[#16001f] border border-purple-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-600"
+                        />
+                        <button 
+                            onClick={handleSaveQuiz}
+                            disabled={loading || !title.trim() || questions.some(q => !q.saved)}
+                            className="bg-gray-950 border-2 border-green-600 rounded px-3 py-2 text-green-600 font-semibold hover:bg-green-600 hover:text-white transition-all duration-300 cursor-pointer active:scale-95 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Saving..." : "Save Quiz"}
                         </button>
                     </div>
                 )}
