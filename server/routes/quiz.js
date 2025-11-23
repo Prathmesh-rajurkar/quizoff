@@ -34,10 +34,21 @@ router.post('/create', authMiddleware, async (req, res) => {
                 });
             }
         }
+        const generateUniqueCode = async (Model) => {
+            let code;
+            let exists = true;
 
+            while (exists) {
+                code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+                exists = await Model.exists({ code });
+            }
+
+            return code;
+        };
         const quiz = await Quiz.create({
             title,
             questions,
+            code: await generateUniqueCode(Quiz),
             creator: req.user._id
         });
 
@@ -47,6 +58,8 @@ router.post('/create', authMiddleware, async (req, res) => {
             quiz
         });
     } catch (error) {
+        console.log("create quiz error :", error);
+
         res.status(500).json({
             success: false,
             message: error.message || 'Error creating quiz'
@@ -60,7 +73,7 @@ router.post('/create', authMiddleware, async (req, res) => {
 router.get('/:code', async (req, res) => {
     try {
         const { code } = req.params;
-        
+
         const quiz = await Quiz.findOne({ code: code.toUpperCase() })
             .populate('creator', 'email username')
             .select('-questions.correctIndex'); // Don't send correct answers
@@ -88,11 +101,13 @@ router.get('/:code', async (req, res) => {
 // @desc    Get user's quizzes
 // @access  Private
 router.get('/library', authMiddleware, async (req, res) => {
+    // console.log("user id", req.user._id);
     try {
+
         const quizzes = await Quiz.find({ creator: req.user._id })
             .select('-questions')
             .sort({ createdAt: -1 });
-
+        // const quizzes = await Quiz.find()
         res.json({
             success: true,
             count: quizzes.length,
@@ -148,7 +163,7 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 router.get('/:code/leaderboard', async (req, res) => {
     try {
         const { code } = req.params;
-        
+
         const session = await Session.findOne({ code: code.toUpperCase() })
             .populate('participants.userId', 'email username');
 

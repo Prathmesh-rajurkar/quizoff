@@ -22,8 +22,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    origin: process.env.CLIENT_PROD_URL || 'https://quizoff.vercel.app',
+    origin: [process.env.CLIENT_URL || 'http://localhost:5173', process.env.CLIENT_PROD_URL || 'https://quizoff.vercel.app'],
     // credentials: true
 }));
 app.use(express.json());

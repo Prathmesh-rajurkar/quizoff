@@ -16,7 +16,7 @@ const authMiddleware = async (req, res, next) => {
         const token = authHeader.substring(7); // Remove 'Bearer ' prefix
 
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-in-production');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
         // Get user from token
         req.user = await User.findById(decoded.id).select('-password');
